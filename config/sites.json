@@ -7,16 +7,14 @@
     },
     "selectors": {
       "job_count": [
-        ".jobs-count",
-        ".search-results-count",
-        "h1 .count",
-        ".results-info"
+        "text",
+        ".job-count-number",
+        ".miniboard-count",
+        ".category-count"
       ],
       "fallback_patterns": [
-        "намерени (\\d+) обяви",
-        "(\\d+) резултата",
-        "общо: (\\d+)",
-        "(\\d+) работни места"
+        "(\\d+)\\s*обяви",
+        "(\\d+)\\s*обява"
       ]
     }
   },
@@ -29,16 +27,18 @@
     "selectors": {
       "job_count": [
         ".search-results-info",
-        ".results-summary", 
+        ".results-summary",
         "#search-results-count",
         ".jobs-found-count",
-        ".paging-info"
+        ".paging-info",
+        ".search-results"
       ],
       "fallback_patterns": [
-        "Показани \\d+-\\d+ от (\\d+)",
-        "(\\d+) обяви намерени",
-        "общо (\\d+) резултата",
-        "Намерени са (\\d+) обяви"
+        "Показани\\s+\\d+-\\d+\\s+от\\s+(\\d+)",
+        "(\\d+)\\s+обяви намерени",
+        "общо\\s+(\\d+)\\s+резултата",
+        "Намерени са\\s+(\\d+)\\s+обяви",
+        "от\\s+(\\d+)\\s+обяви"
       ]
     }
   }

@@ -10,7 +10,11 @@ import git
 PROJECT_ROOT = Path(__file__).parent
 DATA_DIR = PROJECT_ROOT / "data"
 CONFIG_DIR = PROJECT_ROOT / "config"
-CSV_COLUMNS = ["Date", "Site", "Total_Jobs", "Ruse_Jobs", "Remote_Jobs", "Notes"]
+# CSV settings with expanded columns for detailed categories
+CSV_COLUMNS = [
+    "Date", "Site", "Total_Jobs", "Ruse_Jobs", "Remote_Jobs",
+    "Categories_Count", "Categories_Detail", "Notes"
+]
 GIT_REPO_PATH = PROJECT_ROOT
 GIT_COMMIT_MESSAGE_TEMPLATE = "Daily job count update for {date}"
 
@@ -151,12 +155,27 @@ def setup_logging(level: str = "INFO") -> None:
 
 
 def format_job_data_row(site: str, results: Dict, date: datetime, notes: str = "Daily scraping") -> Dict:
-    """Format scraping results into CSV row format"""
+    """Format scraping results into CSV row format with detailed categories"""
+
+    # Handle detailed category information
+    categories_detail = ""
+    categories_count = 0
+
+    if 'raw_categories' in results and results['raw_categories']:
+        categories = results['raw_categories']
+        categories_count = len(categories)
+        # Format as "cat1:123, cat2:456, cat3:789"
+        categories_detail = ", ".join([f"{k}:{v}" for k, v in categories.items()])
+    elif 'categories_detail' in results:
+        categories_detail = results['categories_detail']
+
     return {
         'Date': date.strftime("%Y-%m-%d"),
         'Site': site,
         'Total_Jobs': results.get('total'),
         'Ruse_Jobs': results.get('ruse'),
         'Remote_Jobs': results.get('remote'),
+        'Categories_Count': categories_count,
+        'Categories_Detail': categories_detail,
         'Notes': notes
     }

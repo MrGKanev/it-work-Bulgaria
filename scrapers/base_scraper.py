@@ -9,8 +9,8 @@ from typing import Dict, Optional, List
 # Simple configuration constants (avoiding complex imports)
 REQUEST_TIMEOUT = 30
 REQUEST_RETRIES = 3
-REQUEST_DELAY = 1
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+REQUEST_DELAY = 2  # Increased delay to be more polite
+USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 
 class BaseScraper(ABC):
@@ -27,21 +27,31 @@ class BaseScraper(ABC):
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': USER_AGENT,
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'bg,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Language': 'bg,en-US;q=0.9,en;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
             'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Cache-Control': 'max-age=0',
         })
 
     def fetch_page(self, url: str) -> Optional[BeautifulSoup]:
-        """Fetch and parse a webpage"""
+        """Fetch and parse a webpage with proper encoding handling"""
         for attempt in range(REQUEST_RETRIES):
             try:
                 self.logger.info(f"Fetching {url} (attempt {attempt + 1})")
                 response = self.session.get(url, timeout=REQUEST_TIMEOUT)
                 response.raise_for_status()
 
-                soup = BeautifulSoup(response.content, 'html.parser')
+                # Set proper encoding to handle Bulgarian characters
+                if response.encoding is None or response.encoding == 'ISO-8859-1':
+                    response.encoding = 'utf-8'
+
+                # Parse with proper encoding
+                soup = BeautifulSoup(response.content, 'html.parser', from_encoding='utf-8')
                 time.sleep(REQUEST_DELAY)  # Be nice to the server
                 return soup
 
@@ -58,11 +68,33 @@ class BaseScraper(ABC):
         if not soup:
             return None
 
-        # Try CSS selectors first
+        # First try regex patterns on full page text (more reliable for dev.bg)
+        page_text = soup.get_text()
+        all_numbers = []
+
+        for pattern in self.selectors.get('fallback_patterns', []):
+            try:
+                matches = re.findall(pattern, page_text, re.IGNORECASE)
+                self.logger.debug(f"Pattern '{pattern}' found matches: {matches}")
+                for match in matches:
+                    if isinstance(match, str) and match.isdigit():
+                        all_numbers.append(int(match))
+                        self.logger.debug(f"Added number: {match}")
+            except Exception as e:
+                self.logger.debug(f"Pattern '{pattern}' failed: {e}")
+                continue
+
+        # If we found numbers, return the largest one (most likely to be total)
+        if all_numbers:
+            count = max(all_numbers)
+            self.logger.info(f"Found job count {count} from text patterns (max of {all_numbers})")
+            return count
+
+        # Try CSS selectors as fallback
         for selector in self.selectors.get('job_count', []):
             try:
-                element = soup.select_one(selector)
-                if element:
+                elements = soup.select(selector)
+                for element in elements:
                     text = element.get_text(strip=True)
                     numbers = re.findall(r'\d+', text)
                     if numbers:
@@ -71,19 +103,6 @@ class BaseScraper(ABC):
                         return count
             except Exception as e:
                 self.logger.debug(f"Selector '{selector}' failed: {e}")
-                continue
-
-        # Try fallback regex patterns on full page text
-        page_text = soup.get_text()
-        for pattern in self.selectors.get('fallback_patterns', []):
-            try:
-                match = re.search(pattern, page_text, re.IGNORECASE)
-                if match:
-                    count = int(match.group(1))
-                    self.logger.info(f"Found job count {count} using pattern '{pattern}'")
-                    return count
-            except Exception as e:
-                self.logger.debug(f"Pattern '{pattern}' failed: {e}")
                 continue
 
         self.logger.warning("Could not extract job count from page")

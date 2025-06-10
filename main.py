@@ -52,9 +52,9 @@ def main():
     all_data_rows = []
 
     # Scrape each site
+    # Note: jobs.bg temporarily disabled due to 403 Forbidden errors
     scrapers = {
-        'dev.bg': DevBgScraper,
-        'jobs.bg': JobsBgScraper
+        'dev.bg': DevBgScraper
     }
 
     for site_name, scraper_class in scrapers.items():
