@@ -1,0 +1,45 @@
+{
+  "dev.bg": {
+    "urls": {
+      "total": "https://dev.bg/",
+      "ruse": "https://dev.bg/ruse/",
+      "remote": "https://dev.bg/remote/"
+    },
+    "selectors": {
+      "job_count": [
+        ".jobs-count",
+        ".search-results-count",
+        "h1 .count",
+        ".results-info"
+      ],
+      "fallback_patterns": [
+        "намерени (\\d+) обяви",
+        "(\\d+) резултата",
+        "общо: (\\d+)",
+        "(\\d+) работни места"
+      ]
+    }
+  },
+  "jobs.bg": {
+    "urls": {
+      "total": "https://www.jobs.bg/front_job_search.php?categories%5B0%5D=56",
+      "ruse": "https://www.jobs.bg/front_job_search.php?subm=1&categories%5B%5D=56&location_sid=19",
+      "remote": "https://www.jobs.bg/front_job_search.php?subm=1&categories%5B%5D=56&is_distance_interview=1&is_distance_job=1"
+    },
+    "selectors": {
+      "job_count": [
+        ".search-results-info",
+        ".results-summary", 
+        "#search-results-count",
+        ".jobs-found-count",
+        ".paging-info"
+      ],
+      "fallback_patterns": [
+        "Показани \\d+-\\d+ от (\\d+)",
+        "(\\d+) обяви намерени",
+        "общо (\\d+) резултата",
+        "Намерени са (\\d+) обяви"
+      ]
+    }
+  }
+}
